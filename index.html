@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -8,33 +9,66 @@
 </head>
 <body>
     <div class="container">
+
         <h1>Cadastro de Produtos</h1>
 
-        <!--Formulário de Entrada-->
+        <!-- Formulário de Entrada -->
         <form id="produto-form">
+
             <div class="form-group">
                 <label for="nome">Nome do Produto:</label>
-                <input type="text" id="nome" placeholder="Ex. Notebook" required />
-            </div>
-
-                <div class="form-group">
-                    <label for="nome">Preço (R$:)</label>
-                    <input type="number" id="preco" step="0.01" placeholder="Ex. 3500.00" required />
+                <input type="text" id="nome"
+                    placeholder="Ex. Notebook" required>
             </div>
 
             <div class="form-group">
-                    <label for="nome">Quantidade:</label>
-                    <input type="number" id="quantidade" placeholder="Ex. 5" required />
+                <label for="preco">Preço (R$):</label>
+                <input type="number" id="preco"
+                    step="0.01" min="0.01"
+                    placeholder="Ex. 3500.00" required>
             </div>
-            <button type="submit" class="btn primary"> Adicionar Produto</button>
+
+            <div class="form-group">
+                <label for="quantidade">Quantidade:</label>
+                <input type="number" id="quantidade"
+                    min="1" step="1"
+                    placeholder="Ex. 5" required>
+            </div>
+
+            <button type="submit" class="btn primary">
+                Adicionar Produto
+            </button>
+
         </form>
 
-        <!--Cabeçalho de Ações e Resumo-->
+        <!-- Cabeçalho de Ações e Resumo -->
         <div class="resumo-container">
-            <h3 id="total-estoque">Total em Estoque: R$0,00</h3>
-            <button id="limpar-tabela" class="btn-danger">Limpar Tudo</button>
+            <h3 id="total-estoque">
+                Total em Estoque: R$ 0,00
+            </h3>
+
+            <button id="limpar-tabela" class="btn-danger">
+                Limpar Tudo
+            </button>
         </div>
-        <!--Tabela de Exibição-->
+
+        <!-- NOVO: Campo de Pesquisa Dinâmica -->
+        <div class="form-group campo-pesquisa">
+            <label for="campo-busca">Pesquisar Produto:</label>
+
+            <input
+                type="text"
+                id="campo-busca"
+                placeholder="Digite o nome do produto..."
+            >
+        </div>
+
+        <!-- Mensagem quando não encontrar produtos -->
+        <p id="mensagem-vazia" class="mensagem-vazia" hidden>
+            Nenhum produto encontrado.
+        </p>
+
+        <!-- Tabela de Exibição -->
         <table id="tabela-produtos">
             <thead>
                 <tr>
@@ -45,10 +79,12 @@
                     <th>Ações</th>
                 </tr>
             </thead>
+
             <tbody>
-                <!--As linha da tabela serão inserida pelo Js-->
+                <!-- As linhas da tabela serão inseridas pelo JS -->
             </tbody>
         </table>
+
     </div>
 
     <script src="script.js"></script>

@@ -1,161 +1,502 @@
-//
-// FASE 1: Modelagem dos dados (Classe Base)
-//
+
+// =====================================================
+// FASE 1: CLASSE PRODUTO
+// =====================================================
+
 class Produto {
+    #preco;
+    #quantidade;
+
     constructor(nome, preco, quantidade) {
+        nome = String(nome).trim();
+
+        if (!nome) {
+            throw new Error("O nome do produto não pode ficar em branco.");
+        }
+
         this.nome = nome;
-        this.preco = parseFloat(preco);
-        this.quantidade = parseInt(quantidade);
+        this.preco = preco;
+        this.quantidade = quantidade;
     }
 
-    // Método que calcula o subtotal do produto
+    get preco() {
+        return this.#preco;
+    }
+
+    set preco(novoPreco) {
+        novoPreco = Number(novoPreco);
+
+        if (!Number.isFinite(novoPreco) || novoPreco <= 0) {
+            throw new Error("O preço deve ser maior que zero.");
+        }
+
+        this.#preco = novoPreco;
+    }
+
+    get quantidade() {
+        return this.#quantidade;
+    }
+
+    set quantidade(novaQuantidade) {
+        novaQuantidade = Number(novaQuantidade);
+
+        if (!Number.isInteger(novaQuantidade) || novaQuantidade <= 0) {
+            throw new Error("A quantidade deve ser um inteiro maior que zero.");
+        }
+
+        this.#quantidade = novaQuantidade;
+    }
+
     calcularSubtotal() {
         return this.preco * this.quantidade;
     }
 }
 
-//
-// FASE 2: Gerenciamento de Estado (Memória)
-//
-const listaDeProdutos = [];
 
-//
-// 🆕 FASE 2.1: Persistência com localStorage
-//
-// Definimos uma constante para evitar erros de digitação ao usar a chave do localStorage
+// =====================================================
+// FASE 2: GERENCIAMENTO DOS PRODUTOS
+// =====================================================
+
+const listaDeProdutos = [];
 const CHAVE_STORAGE = "sistema_estoque_produtos";
 
-// 1. Função para SALVAR os dados no navegador
-function salvarNoLocalStorage() {
-    // JSON.stringify converte o Array de Objetos JS em uma String JSON
-    const listaEmTexto = JSON.stringify(listaDeProdutos);
-    localStorage.setItem(CHAVE_STORAGE, listaEmTexto);
-}
+let indiceEdicao = null;
 
-// 2. Função para CARREGAR os dados salvos quando a página abrir
-function carregarDoLocalStorage() {
-    const dadosSalvos = localStorage.getItem(CHAVE_STORAGE);
 
-    // Se existirem dados salvos anteriormente no navegador...
-    if (dadosSalvos) {
-        // Converte a string JSON de volta para um Array de objetos genéricos
-        const produtosObjetos = JSON.parse(dadosSalvos);
+// =====================================================
+// FASE 3: ELEMENTOS DO HTML
+// =====================================================
 
-        // ATENÇÃO (Conceito POO): Reinstanciamos cada produto com "new Produto()"
-        // para garantir que os objetos recuperem o método .calcularSubtotal()
-        produtosObjetos.forEach((prod) => {
-            const produtoInstanciado = new Produto(prod.nome, prod.preco, prod.quantidade);
-            listaDeProdutos.push(produtoInstanciado);
-        });
-    }
-}
-
-//
-// FASE 3: Captura de Elementos do DOM
-//
 const formProduto = document.getElementById("produto-form");
 const btnLimparTudo = document.getElementById("limpar-tabela");
 const totalEstoqueEl = document.getElementById("total-estoque");
 
-//
-// FASE 4: Escuta de Eventos
-//
+const nomeInput = document.getElementById("nome");
+const precoInput = document.getElementById("preco");
+const quantidadeInput = document.getElementById("quantidade");
 
-// 1. Adicionar Produto pelo Formulário
-formProduto.addEventListener("submit", function (event) {
-    event.preventDefault();
+const campoBusca = document.getElementById("campo-busca");
+const mensagemVazia = document.getElementById("mensagem-vazia");
 
-    const nomeInput = document.getElementById("nome").value;
-    const precoInput = document.getElementById("preco").value;
-    const quantidadeInput = document.getElementById("quantidade").value;
+const tabelaBody = document.querySelector(
+    "#tabela-produtos tbody"
+);
 
-    const novoProduto = new Produto(nomeInput, precoInput, quantidadeInput);
+const btnEnviar = formProduto
+    ? formProduto.querySelector('button[type="submit"]')
+    : null;
 
-    listaDeProdutos.push(novoProduto);
+const textoBotaoOriginal = btnEnviar
+    ? btnEnviar.textContent
+    : "Adicionar Produto";
 
-    // 🆕 Salva no localStorage sempre que um novo produto for adicionado
-    salvarNoLocalStorage();
+function alterarTextoBotao(texto) {
+    if (btnEnviar) {
+        btnEnviar.textContent = texto;
+    }
+}
 
-    atualizarInterface();
-    formProduto.reset();
-});
 
-// 2. Limpar toda a tabela
-btnLimparTudo.addEventListener("click", function () {
-    if (listaDeProdutos.length === 0) {
-        alert("A tabela já está vazia!");
+// =====================================================
+// FASE 4: SALVAR NO LOCALSTORAGE
+// =====================================================
+
+function salvarNoLocalStorage() {
+    const dadosParaSalvar = listaDeProdutos.map(produto => ({
+        nome: produto.nome,
+        preco: produto.preco,
+        quantidade: produto.quantidade
+    }));
+
+    localStorage.setItem(
+        CHAVE_STORAGE,
+        JSON.stringify(dadosParaSalvar)
+    );
+}
+
+
+// =====================================================
+// FASE 5: CARREGAR DO LOCALSTORAGE
+// =====================================================
+
+function carregarDoLocalStorage() {
+    const dadosSalvos = localStorage.getItem(CHAVE_STORAGE);
+
+    if (!dadosSalvos) return;
+
+    try {
+        const produtosSalvos = JSON.parse(dadosSalvos);
+
+        if (!Array.isArray(produtosSalvos)) {
+            throw new Error("Formato de dados inválido.");
+        }
+
+        produtosSalvos.forEach(dados => {
+            try {
+                listaDeProdutos.push(
+                    new Produto(
+                        dados.nome,
+                        dados.preco,
+                        dados.quantidade
+                    )
+                );
+            } catch (erro) {
+                console.warn("Produto inválido ignorado:", erro.message);
+            }
+        });
+
+    } catch (erro) {
+        console.error("Erro ao carregar produtos:", erro);
+    }
+}
+
+
+// =====================================================
+// FASE 6: VALIDAR E ENVIAR O FORMULÁRIO
+// =====================================================
+
+if (formProduto) {
+    formProduto.addEventListener("submit", function(event) {
+
+        event.preventDefault();
+
+        const nome = nomeInput.value.trim();
+        const preco = Number(precoInput.value);
+        const quantidade = Number(quantidadeInput.value);
+
+        // CLÁUSULAS DE GUARDA
+
+        if (nome === "") {
+            alert("Digite o nome do produto.");
+            nomeInput.focus();
+            return;
+        }
+
+        if (
+            precoInput.value.trim() === "" ||
+            !Number.isFinite(preco) ||
+            preco <= 0
+        ) {
+            alert("Digite um preço válido.");
+            precoInput.focus();
+            return;
+        }
+
+        if (
+            quantidadeInput.value.trim() === "" ||
+            !Number.isInteger(quantidade) ||
+            quantidade <= 0
+        ) {
+            alert("Digite uma quantidade inteira válida.");
+            quantidadeInput.focus();
+            return;
+        }
+
+        try {
+            const novoProduto = new Produto(
+                nome,
+                preco,
+                quantidade
+            );
+
+            if (indiceEdicao === null) {
+
+                // CADASTRAR PRODUTO
+                listaDeProdutos.push(novoProduto);
+
+            } else {
+
+                // ATUALIZAR PRODUTO
+                listaDeProdutos[indiceEdicao] = novoProduto;
+            }
+
+            salvarNoLocalStorage();
+            atualizarInterface();
+
+            // VOLTAR AO MODO DE INCLUSÃO
+            indiceEdicao = null;
+            formProduto.reset();
+
+            alterarTextoBotao(textoBotaoOriginal);
+
+        } catch (erro) {
+            alert(erro.message);
+        }
+    });
+}
+
+
+// =====================================================
+// FASE 7: PREPARAR EDIÇÃO
+// =====================================================
+
+function prepararEdicao(index) {
+
+    if (
+        !Number.isInteger(index) ||
+        index < 0 ||
+        index >= listaDeProdutos.length
+    ) {
+        alert("Não foi possível encontrar esse produto.");
         return;
     }
 
-    if (confirm("Tem certeza que deseja remover todos os produtos?")) {
-        listaDeProdutos.length = 0;
+    const produto = listaDeProdutos[index];
 
-        // 🆕 Remove a chave inteira do localStorage
-        localStorage.removeItem(CHAVE_STORAGE);
+    nomeInput.value = produto.nome;
+    precoInput.value = produto.preco;
+    quantidadeInput.value = produto.quantidade;
 
-        atualizarInterface();
-    }
-});
+    indiceEdicao = index;
 
-//
-// FASE 5: Funções de Atualização e Renderização da Interface
-//
+    alterarTextoBotao("Salvar Alterações");
 
-// Função responsável por remover um único produto pelo índice
+    nomeInput.focus();
+}
+
+
+// =====================================================
+// FASE 8: REMOVER UM PRODUTO
+// =====================================================
+
 function removerProduto(index) {
+
+    if (
+        !Number.isInteger(index) ||
+        index < 0 ||
+        index >= listaDeProdutos.length
+    ) {
+        return;
+    }
+
     listaDeProdutos.splice(index, 1);
 
-    // 🆕 Salva a nova lista (sem o item removido) no localStorage
-    salvarNoLocalStorage();
+    if (indiceEdicao === index) {
 
+        indiceEdicao = null;
+        formProduto.reset();
+
+        alterarTextoBotao(textoBotaoOriginal);
+
+    } else if (indiceEdicao !== null && index < indiceEdicao) {
+
+        indiceEdicao--;
+    }
+
+    salvarNoLocalStorage();
     atualizarInterface();
 }
 
-// Função responsável por calcular e renderizar o total geral em estoque
-function atualizarTotalEstoque() {
-    const total = listaDeProdutos.reduce((acc, produto) => {
-        return acc + produto.calcularSubtotal();
-    }, 0);
 
-    totalEstoqueEl.textContent = `Total em Estoque: R$ ${total.toFixed(2)}`;
+// =====================================================
+// FASE 9: LIMPAR TODOS OS PRODUTOS
+// =====================================================
+
+if (btnLimparTudo) {
+
+    btnLimparTudo.addEventListener("click", function() {
+
+        listaDeProdutos.length = 0;
+        indiceEdicao = null;
+
+        localStorage.removeItem(CHAVE_STORAGE);
+
+        formProduto.reset();
+
+        if (campoBusca) {
+            campoBusca.value = "";
+        }
+
+        alterarTextoBotao(textoBotaoOriginal);
+
+        atualizarInterface();
+    });
 }
 
-// Função responsável por re-desenhar a tabela
-function renderizarTabela() {
-    const tabelaBody = document.querySelector("#tabela-produtos tbody");
+
+// =====================================================
+// FASE 10: FILTRAR PRODUTOS COM FILTER()
+// =====================================================
+
+function obterProdutosFiltrados() {
+
+    const termoBusca = campoBusca.value
+        .trim()
+        .toLowerCase();
+
+    return listaDeProdutos
+        .map((produto, index) => ({
+            produto: produto,
+            index: index
+        }))
+        .filter(item => {
+
+            return item.produto.nome
+                .toLowerCase()
+                .includes(termoBusca);
+
+        });
+}
+
+
+// =====================================================
+// FASE 11: CALCULAR TOTAL COM REDUCE()
+// =====================================================
+
+function atualizarTotalEstoque(produtosVisiveis) {
+
+    const valorTotal = produtosVisiveis.reduce(
+        (acumulador, item) => {
+
+            return acumulador +
+                item.produto.calcularSubtotal();
+
+        },
+        0
+    );
+
+    const valorFormatado = valorTotal.toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL"
+    });
+
+    totalEstoqueEl.textContent =
+        `Total em Estoque: ${valorFormatado}`;
+}
+
+
+// =====================================================
+// FASE 12: RENDERIZAR A TABELA
+// =====================================================
+
+function renderizarTabela(produtosVisiveis) {
 
     tabelaBody.innerHTML = "";
 
-    listaDeProdutos.forEach((produto, index) => {
+    // VERIFICAR SE EXISTEM PRODUTOS ENCONTRADOS
+
+    if (produtosVisiveis.length === 0) {
+
+        mensagemVazia.hidden = false;
+
+    } else {
+
+        mensagemVazia.hidden = true;
+    }
+
+    produtosVisiveis.forEach(item => {
+
+        const produto = item.produto;
+        const index = item.index;
+
         const linha = document.createElement("tr");
 
-        linha.innerHTML = `
-            <td>${produto.nome}</td>
-            <td>R$ ${produto.preco.toFixed(2)}</td>
-            <td>${produto.quantidade}</td>
-            <td>R$ ${produto.calcularSubtotal().toFixed(2)}</td>
-            <td>
-                <button class="btn-remover">Remover</button>
-            </td>
-        `;
+        // NOME
+        const celulaNome = document.createElement("td");
+        celulaNome.textContent = produto.nome;
 
-        const btnRemover = linha.querySelector(".btn-remover");
-        btnRemover.addEventListener("click", () => removerProduto(index));
+        // PREÇO
+        const celulaPreco = document.createElement("td");
+
+        celulaPreco.textContent = produto.preco.toLocaleString(
+            "pt-BR",
+            {
+                style: "currency",
+                currency: "BRL"
+            }
+        );
+
+        // QUANTIDADE
+        const celulaQuantidade = document.createElement("td");
+        celulaQuantidade.textContent = produto.quantidade;
+
+        // SUBTOTAL
+        const celulaSubtotal = document.createElement("td");
+
+        celulaSubtotal.textContent =
+            produto.calcularSubtotal().toLocaleString(
+                "pt-BR",
+                {
+                    style: "currency",
+                    currency: "BRL"
+                }
+            );
+
+        // AÇÕES
+        const celulaAcoes = document.createElement("td");
+
+        // BOTÃO EDITAR
+        const btnEditar = document.createElement("button");
+
+        btnEditar.type = "button";
+        btnEditar.className = "btn-editar";
+        btnEditar.textContent = "Editar";
+
+        btnEditar.addEventListener("click", function() {
+            prepararEdicao(index);
+        });
+
+        // BOTÃO REMOVER
+        const btnRemover = document.createElement("button");
+
+        btnRemover.type = "button";
+        btnRemover.className = "btn-remover";
+        btnRemover.textContent = "Remover";
+
+        btnRemover.addEventListener("click", function() {
+            removerProduto(index);
+        });
+
+        celulaAcoes.append(btnEditar, btnRemover);
+
+        linha.append(
+            celulaNome,
+            celulaPreco,
+            celulaQuantidade,
+            celulaSubtotal,
+            celulaAcoes
+        );
 
         tabelaBody.appendChild(linha);
     });
 }
 
-// Função principal que sincroniza a tela com os dados
+
+// =====================================================
+// FASE 13: ATUALIZAR INTERFACE
+// =====================================================
+
 function atualizarInterface() {
-    renderizarTabela();
-    atualizarTotalEstoque();
+
+    // Obtém somente os produtos correspondentes à pesquisa
+    const produtosVisiveis = obterProdutosFiltrados();
+
+    // Atualiza a tabela
+    renderizarTabela(produtosVisiveis);
+
+    // Atualiza o total somente dos produtos visíveis
+    atualizarTotalEstoque(produtosVisiveis);
 }
 
-//
-// 🆕 FASE 6: Inicialização da Aplicação
-//
-// Ao carregar o script pela primeira vez, restaura os dados do localStorage
-// e atualiza a interface gráfica.
+
+// =====================================================
+// FASE 14: PESQUISA DINÂMICA COM EVENTO INPUT
+// =====================================================
+
+if (campoBusca) {
+
+    campoBusca.addEventListener("input", function() {
+
+        atualizarInterface();
+
+    });
+}
+
+
+// =====================================================
+// FASE 15: INICIAR O SISTEMA
+// =====================================================
+
 carregarDoLocalStorage();
+
 atualizarInterface();
