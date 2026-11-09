@@ -1,4 +1,5 @@
 
+
 // =====================================================
 // FASE 1: CLASSE PRODUTO
 // =====================================================
@@ -61,6 +62,7 @@ const listaDeProdutos = [];
 const CHAVE_STORAGE = "sistema_estoque_produtos";
 
 let indiceEdicao = null;
+let indiceAutopreenchido = null;
 
 
 // =====================================================
@@ -78,9 +80,7 @@ const quantidadeInput = document.getElementById("quantidade");
 const campoBusca = document.getElementById("campo-busca");
 const mensagemVazia = document.getElementById("mensagem-vazia");
 
-const tabelaBody = document.querySelector(
-    "#tabela-produtos tbody"
-);
+const tabelaBody = document.querySelector("#tabela-produtos tbody");
 
 const btnEnviar = formProduto
     ? formProduto.querySelector('button[type="submit"]')
@@ -98,10 +98,51 @@ function alterarTextoBotao(texto) {
 
 
 // =====================================================
-// FASE 4: SALVAR NO LOCALSTORAGE
+// FASE 4: AUTOPREENCHIMENTO DE PRODUTOS
+// =====================================================
+
+nomeInput.addEventListener("input", function() {
+
+    const nomeDigitado = nomeInput.value.trim().toLowerCase();
+
+    const indiceEncontrado = listaDeProdutos.findIndex(produto =>
+        produto.nome.toLowerCase() === nomeDigitado
+    );
+
+    if (indiceEncontrado !== -1) {
+
+        const produto = listaDeProdutos[indiceEncontrado];
+
+        // Preencher informações automaticamente
+        precoInput.value = produto.preco;
+        quantidadeInput.value = produto.quantidade;
+
+        // Ativar edição do produto encontrado
+        indiceEdicao = indiceEncontrado;
+        indiceAutopreenchido = indiceEncontrado;
+
+        alterarTextoBotao("Salvar Alterações");
+
+    } else if (indiceAutopreenchido !== null) {
+
+        // O nome digitado não corresponde mais ao produto
+        indiceEdicao = null;
+        indiceAutopreenchido = null;
+
+        precoInput.value = "";
+        quantidadeInput.value = "";
+
+        alterarTextoBotao(textoBotaoOriginal);
+    }
+});
+
+
+// =====================================================
+// FASE 5: SALVAR NO LOCALSTORAGE
 // =====================================================
 
 function salvarNoLocalStorage() {
+
     const dadosParaSalvar = listaDeProdutos.map(produto => ({
         nome: produto.nome,
         preco: produto.preco,
@@ -116,15 +157,17 @@ function salvarNoLocalStorage() {
 
 
 // =====================================================
-// FASE 5: CARREGAR DO LOCALSTORAGE
+// FASE 6: CARREGAR DO LOCALSTORAGE
 // =====================================================
 
 function carregarDoLocalStorage() {
+
     const dadosSalvos = localStorage.getItem(CHAVE_STORAGE);
 
     if (!dadosSalvos) return;
 
     try {
+
         const produtosSalvos = JSON.parse(dadosSalvos);
 
         if (!Array.isArray(produtosSalvos)) {
@@ -132,7 +175,9 @@ function carregarDoLocalStorage() {
         }
 
         produtosSalvos.forEach(dados => {
+
             try {
+
                 listaDeProdutos.push(
                     new Produto(
                         dados.nome,
@@ -140,6 +185,7 @@ function carregarDoLocalStorage() {
                         dados.quantidade
                     )
                 );
+
             } catch (erro) {
                 console.warn("Produto inválido ignorado:", erro.message);
             }
@@ -152,10 +198,11 @@ function carregarDoLocalStorage() {
 
 
 // =====================================================
-// FASE 6: VALIDAR E ENVIAR O FORMULÁRIO
+// FASE 7: VALIDAR E ENVIAR O FORMULÁRIO
 // =====================================================
 
 if (formProduto) {
+
     formProduto.addEventListener("submit", function(event) {
 
         event.preventDefault();
@@ -164,13 +211,15 @@ if (formProduto) {
         const preco = Number(precoInput.value);
         const quantidade = Number(quantidadeInput.value);
 
-        // CLÁUSULAS DE GUARDA
+        // VALIDAR NOME
 
         if (nome === "") {
             alert("Digite o nome do produto.");
             nomeInput.focus();
             return;
         }
+
+        // VALIDAR PREÇO
 
         if (
             precoInput.value.trim() === "" ||
@@ -181,6 +230,8 @@ if (formProduto) {
             precoInput.focus();
             return;
         }
+
+        // VALIDAR QUANTIDADE
 
         if (
             quantidadeInput.value.trim() === "" ||
@@ -193,6 +244,7 @@ if (formProduto) {
         }
 
         try {
+
             const novoProduto = new Produto(
                 nome,
                 preco,
@@ -204,17 +256,26 @@ if (formProduto) {
                 // CADASTRAR PRODUTO
                 listaDeProdutos.push(novoProduto);
 
+                alert("Produto cadastrado com sucesso!");
+
             } else {
 
-                // ATUALIZAR PRODUTO
+                // ATUALIZAR PRODUTO EXISTENTE
                 listaDeProdutos[indiceEdicao] = novoProduto;
+
+                alert("Produto atualizado com sucesso!");
             }
+
+            // SALVAR E ATUALIZAR
 
             salvarNoLocalStorage();
             atualizarInterface();
 
-            // VOLTAR AO MODO DE INCLUSÃO
+            // VOLTAR AO MODO DE CADASTRO
+
             indiceEdicao = null;
+            indiceAutopreenchido = null;
+
             formProduto.reset();
 
             alterarTextoBotao(textoBotaoOriginal);
@@ -227,7 +288,7 @@ if (formProduto) {
 
 
 // =====================================================
-// FASE 7: PREPARAR EDIÇÃO
+// FASE 8: PREPARAR EDIÇÃO
 // =====================================================
 
 function prepararEdicao(index) {
@@ -243,11 +304,16 @@ function prepararEdicao(index) {
 
     const produto = listaDeProdutos[index];
 
+    // PREENCHER OS CAMPOS
+
     nomeInput.value = produto.nome;
     precoInput.value = produto.preco;
     quantidadeInput.value = produto.quantidade;
 
+    // ATIVAR MODO DE EDIÇÃO
+
     indiceEdicao = index;
+    indiceAutopreenchido = null;
 
     alterarTextoBotao("Salvar Alterações");
 
@@ -256,7 +322,7 @@ function prepararEdicao(index) {
 
 
 // =====================================================
-// FASE 8: REMOVER UM PRODUTO
+// FASE 9: REMOVER UM PRODUTO
 // =====================================================
 
 function removerProduto(index) {
@@ -269,11 +335,19 @@ function removerProduto(index) {
         return;
     }
 
+    const confirmar = confirm(
+        "Deseja realmente remover este produto?"
+    );
+
+    if (!confirmar) return;
+
     listaDeProdutos.splice(index, 1);
 
     if (indiceEdicao === index) {
 
         indiceEdicao = null;
+        indiceAutopreenchido = null;
+
         formProduto.reset();
 
         alterarTextoBotao(textoBotaoOriginal);
@@ -281,6 +355,22 @@ function removerProduto(index) {
     } else if (indiceEdicao !== null && index < indiceEdicao) {
 
         indiceEdicao--;
+
+    }
+
+    // Ajustar índice do autopreenchimento
+
+    if (indiceAutopreenchido === index) {
+
+        indiceAutopreenchido = null;
+
+    } else if (
+        indiceAutopreenchido !== null &&
+        index < indiceAutopreenchido
+    ) {
+
+        indiceAutopreenchido--;
+
     }
 
     salvarNoLocalStorage();
@@ -289,15 +379,23 @@ function removerProduto(index) {
 
 
 // =====================================================
-// FASE 9: LIMPAR TODOS OS PRODUTOS
+// FASE 10: LIMPAR TODOS OS PRODUTOS
 // =====================================================
 
 if (btnLimparTudo) {
 
     btnLimparTudo.addEventListener("click", function() {
 
+        const confirmar = confirm(
+            "Deseja realmente excluir todos os produtos?"
+        );
+
+        if (!confirmar) return;
+
         listaDeProdutos.length = 0;
+
         indiceEdicao = null;
+        indiceAutopreenchido = null;
 
         localStorage.removeItem(CHAVE_STORAGE);
 
@@ -315,7 +413,7 @@ if (btnLimparTudo) {
 
 
 // =====================================================
-// FASE 10: FILTRAR PRODUTOS COM FILTER()
+// FASE 11: FILTRAR PRODUTOS COM FILTER()
 // =====================================================
 
 function obterProdutosFiltrados() {
@@ -325,10 +423,12 @@ function obterProdutosFiltrados() {
         .toLowerCase();
 
     return listaDeProdutos
+
         .map((produto, index) => ({
             produto: produto,
             index: index
         }))
+
         .filter(item => {
 
             return item.produto.nome
@@ -340,7 +440,7 @@ function obterProdutosFiltrados() {
 
 
 // =====================================================
-// FASE 11: CALCULAR TOTAL COM REDUCE()
+// FASE 12: CALCULAR TOTAL COM REDUCE()
 // =====================================================
 
 function atualizarTotalEstoque(produtosVisiveis) {
@@ -366,14 +466,14 @@ function atualizarTotalEstoque(produtosVisiveis) {
 
 
 // =====================================================
-// FASE 12: RENDERIZAR A TABELA
+// FASE 13: RENDERIZAR A TABELA
 // =====================================================
 
 function renderizarTabela(produtosVisiveis) {
 
     tabelaBody.innerHTML = "";
 
-    // VERIFICAR SE EXISTEM PRODUTOS ENCONTRADOS
+    // VERIFICAR SE EXISTEM PRODUTOS
 
     if (produtosVisiveis.length === 0) {
 
@@ -392,10 +492,12 @@ function renderizarTabela(produtosVisiveis) {
         const linha = document.createElement("tr");
 
         // NOME
+
         const celulaNome = document.createElement("td");
         celulaNome.textContent = produto.nome;
 
         // PREÇO
+
         const celulaPreco = document.createElement("td");
 
         celulaPreco.textContent = produto.preco.toLocaleString(
@@ -407,10 +509,12 @@ function renderizarTabela(produtosVisiveis) {
         );
 
         // QUANTIDADE
+
         const celulaQuantidade = document.createElement("td");
         celulaQuantidade.textContent = produto.quantidade;
 
         // SUBTOTAL
+
         const celulaSubtotal = document.createElement("td");
 
         celulaSubtotal.textContent =
@@ -423,9 +527,11 @@ function renderizarTabela(produtosVisiveis) {
             );
 
         // AÇÕES
+
         const celulaAcoes = document.createElement("td");
 
         // BOTÃO EDITAR
+
         const btnEditar = document.createElement("button");
 
         btnEditar.type = "button";
@@ -437,6 +543,7 @@ function renderizarTabela(produtosVisiveis) {
         });
 
         // BOTÃO REMOVER
+
         const btnRemover = document.createElement("button");
 
         btnRemover.type = "button";
@@ -447,7 +554,11 @@ function renderizarTabela(produtosVisiveis) {
             removerProduto(index);
         });
 
+        // ADICIONAR BOTÕES
+
         celulaAcoes.append(btnEditar, btnRemover);
+
+        // MONTAR LINHA
 
         linha.append(
             celulaNome,
@@ -463,24 +574,27 @@ function renderizarTabela(produtosVisiveis) {
 
 
 // =====================================================
-// FASE 13: ATUALIZAR INTERFACE
+// FASE 14: ATUALIZAR INTERFACE
 // =====================================================
 
 function atualizarInterface() {
 
-    // Obtém somente os produtos correspondentes à pesquisa
+    // Obter produtos correspondentes à pesquisa
+
     const produtosVisiveis = obterProdutosFiltrados();
 
-    // Atualiza a tabela
+    // Atualizar tabela
+
     renderizarTabela(produtosVisiveis);
 
-    // Atualiza o total somente dos produtos visíveis
+    // Atualizar total do estoque
+
     atualizarTotalEstoque(produtosVisiveis);
 }
 
 
 // =====================================================
-// FASE 14: PESQUISA DINÂMICA COM EVENTO INPUT
+// FASE 15: PESQUISA DINÂMICA COM EVENTO INPUT
 // =====================================================
 
 if (campoBusca) {
@@ -494,7 +608,7 @@ if (campoBusca) {
 
 
 // =====================================================
-// FASE 15: INICIAR O SISTEMA
+// FASE 16: INICIAR O SISTEMA
 // =====================================================
 
 carregarDoLocalStorage();

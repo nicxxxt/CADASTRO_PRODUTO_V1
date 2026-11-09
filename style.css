@@ -114,6 +114,62 @@ h1 {
 
     letter-spacing: 1px;
 }
+/* =========================
+   ASSINATURA DA CRIADORA
+========================= */
+
+.criadora {
+    position: relative;
+    z-index: 10;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    margin: 15px auto 25px;
+    text-align: center;
+}
+
+.criadora img {
+    width: 90px;
+    height: 90px;
+
+    object-fit: cover;
+    object-position: center;
+
+    border-radius: 50%;
+
+    border: 3px solid #d69cff;
+
+    box-shadow:
+        0 0 10px #c77dff,
+        0 0 25px rgba(199, 125, 255, 0.7);
+
+    transition: 0.3s;
+}
+
+.criadora img:hover {
+    transform: scale(1.08);
+
+    box-shadow:
+        0 0 15px #e3b7ff,
+        0 0 30px #c77dff;
+}
+
+.criadora p {
+    margin-top: 10px;
+
+    color: #f1d9ff;
+
+    font-size: 13px;
+    font-weight: bold;
+
+    letter-spacing: 0.5px;
+
+    text-shadow:
+        0 0 5px #c77dff,
+        0 0 10px #9d4edd;
+}
 
 /* =========================
    FORMULÁRIO
@@ -351,5 +407,7 @@ tbody tr:hover {
     50% {
         opacity: 1;
         transform: scale(1.15);
+
+   
     }
 }
