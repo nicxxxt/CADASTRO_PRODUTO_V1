@@ -4,6 +4,11 @@
     padding: 0;
 }
 
+/* Garante que o atributo hidden sempre esconda o elemento */
+[hidden] {
+    display: none !important;
+}
+
 body {
     font-family: Arial, sans-serif;
     min-height: 100vh;
@@ -114,6 +119,7 @@ h1 {
 
     letter-spacing: 1px;
 }
+
 /* =========================
    ASSINATURA DA CRIADORA
 ========================= */
@@ -195,6 +201,46 @@ label {
 }
 
 /* =========================
+   MENSAGENS INLINE (V5)
+========================= */
+
+.mensagem-feedback {
+    padding: 12px 16px;
+
+    border-radius: 12px;
+    border-left: 5px solid;
+
+    font-size: 14px;
+    font-weight: bold;
+
+    animation: aparecer 0.25s ease;
+}
+
+.mensagem-feedback.erro {
+    background: rgba(220, 38, 38, 0.2);
+    border-color: #ff4d4d;
+    color: #ffc9c9;
+}
+
+.mensagem-feedback.sucesso {
+    background: rgba(34, 197, 94, 0.18);
+    border-color: #4ade80;
+    color: #c6f7d9;
+}
+
+@keyframes aparecer {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =========================
    INPUTS
 ========================= */
 
@@ -224,6 +270,16 @@ input:focus {
     box-shadow:
         0 0 5px #d69cff,
         0 0 15px rgba(214, 156, 255, 0.4);
+}
+
+/* Campo com erro de validação (V5) */
+input.campo-invalido,
+input.campo-invalido:focus {
+    border-color: #ff4d4d;
+
+    box-shadow:
+        0 0 5px #ff4d4d,
+        0 0 15px rgba(255, 77, 77, 0.4);
 }
 
 /* =========================
@@ -280,6 +336,44 @@ button {
     transform: scale(1.03);
 }
 
+.btn-secundario {
+    background: rgba(255, 255, 255, 0.12);
+    color: #f1d9ff;
+
+    border: 1px solid rgba(220, 180, 255, 0.4);
+}
+
+.btn-secundario:hover {
+    background: rgba(255, 255, 255, 0.22);
+    transform: scale(1.03);
+}
+
+/* Botão Conceito Bootstrap (V5) */
+
+.area-bootstrap {
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.btn-bootstrap {
+    background: linear-gradient(
+        135deg,
+        #7952b3,
+        #563d7c
+    );
+
+    color: white;
+
+    border: 1px solid #b79be0;
+
+    box-shadow: 0 4px 10px rgba(121, 82, 179, 0.5);
+}
+
+.btn-bootstrap:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px #b79be0;
+}
+
 /* =========================
    RESUMO
 ========================= */
@@ -288,6 +382,7 @@ button {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 10px;
 
     margin-bottom: 15px;
     padding-top: 15px;
@@ -300,6 +395,21 @@ button {
     color: #f1d9ff;
 
     text-shadow: 0 0 5px #9d4edd;
+}
+
+/* =========================
+   PESQUISA / MENSAGEM VAZIA
+========================= */
+
+.campo-pesquisa {
+    margin-bottom: 15px;
+}
+
+.mensagem-vazia {
+    margin: 10px 0;
+    text-align: center;
+    color: #cdb5dc;
+    font-style: italic;
 }
 
 /* =========================
@@ -354,19 +464,35 @@ tbody tr:hover {
 }
 
 /* =========================
-   BOTÃO REMOVER
+   BOTÕES EDITAR / REMOVER
 ========================= */
 
+.btn-editar,
 .btn-remover {
-    background: #a23bc7;
-
     color: white;
 
     padding: 6px 12px;
+    margin: 2px;
 
     font-size: 12px;
 
     border-radius: 10px;
+}
+
+.btn-editar {
+    background: #6a3fb5;
+}
+
+.btn-editar:hover {
+    background: #8556d6;
+
+    box-shadow: 0 0 10px #8556d6;
+
+    transform: scale(1.05);
+}
+
+.btn-remover {
+    background: #a23bc7;
 }
 
 .btn-remover:hover {
@@ -375,6 +501,99 @@ tbody tr:hover {
     box-shadow: 0 0 10px #c04bea;
 
     transform: scale(1.05);
+}
+
+/* =========================
+   MODAIS (V5)
+========================= */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background: rgba(10, 4, 24, 0.75);
+    backdrop-filter: blur(4px);
+
+    animation: fade-in 0.2s ease;
+}
+
+.modal-content {
+    width: 100%;
+    max-width: 460px;
+    max-height: 90vh;
+    overflow-y: auto;
+
+    padding: 28px;
+
+    background: #2a1650;
+
+    border: 2px solid rgba(220, 180, 255, 0.45);
+    border-radius: 20px;
+
+    box-shadow:
+        0 0 25px rgba(183, 115, 255, 0.5),
+        0 0 60px rgba(111, 45, 189, 0.4);
+
+    animation: modal-sobe 0.25s ease;
+}
+
+.modal-content h3 {
+    margin-bottom: 14px;
+
+    color: #f1d9ff;
+
+    text-shadow: 0 0 6px #9d4edd;
+}
+
+.modal-content p {
+    margin-bottom: 12px;
+
+    color: #e8cfff;
+
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.modal-content code {
+    padding: 1px 6px;
+
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+
+    color: #ffd9ff;
+    font-size: 13px;
+}
+
+.modal-botoes {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+
+    margin-top: 20px;
+}
+
+@keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes modal-sobe {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 /* =========================
@@ -407,7 +626,28 @@ tbody tr:hover {
     50% {
         opacity: 1;
         transform: scale(1.15);
+    }
+}
 
-   
+/* =========================
+   RESPONSIVO
+========================= */
+
+@media (max-width: 520px) {
+
+    .container {
+        padding: 20px;
+    }
+
+    .resumo-container {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+
+    th,
+    td {
+        padding: 8px 4px;
+        font-size: 13px;
     }
 }

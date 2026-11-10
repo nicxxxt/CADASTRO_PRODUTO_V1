@@ -1,5 +1,3 @@
-
-
 // =====================================================
 // FASE 1: CLASSE PRODUTO
 // =====================================================
@@ -82,12 +80,26 @@ const mensagemVazia = document.getElementById("mensagem-vazia");
 
 const tabelaBody = document.querySelector("#tabela-produtos tbody");
 
+// V5: mensagens inline
+const mensagemFeedback = document.getElementById("mensagem-feedback");
+
+// V5: modal de confirmação
+const modalConfirmacao = document.getElementById("modal-confirmacao");
+const modalMensagem = document.getElementById("modal-mensagem");
+const modalBtnCancelar = document.getElementById("modal-btn-cancelar");
+const modalBtnConfirmar = document.getElementById("modal-btn-confirmar");
+
+// V5: modal Conceito Bootstrap
+const btnConceitoBootstrap = document.getElementById("btn-conceito-bootstrap");
+const modalBootstrap = document.getElementById("modal-bootstrap");
+const modalBsFechar = document.getElementById("modal-bs-fechar");
+
 const btnEnviar = formProduto
     ? formProduto.querySelector('button[type="submit"]')
     : null;
 
 const textoBotaoOriginal = btnEnviar
-    ? btnEnviar.textContent
+    ? btnEnviar.textContent.trim()
     : "Adicionar Produto";
 
 function alterarTextoBotao(texto) {
@@ -98,7 +110,145 @@ function alterarTextoBotao(texto) {
 
 
 // =====================================================
-// FASE 4: AUTOPREENCHIMENTO DE PRODUTOS
+// FASE 4: MENSAGENS INLINE (SUBSTITUI O alert)
+// =====================================================
+
+let temporizadorMensagem = null;
+
+function mostrarMensagem(texto, tipo = "erro") {
+
+    if (!mensagemFeedback) return;
+
+    mensagemFeedback.textContent = texto;
+    mensagemFeedback.className = "mensagem-feedback " + tipo;
+    mensagemFeedback.hidden = false;
+
+    clearTimeout(temporizadorMensagem);
+
+    // Sucesso some sozinho; erro some depois de mais tempo
+    const duracao = tipo === "sucesso" ? 3500 : 6000;
+
+    temporizadorMensagem = setTimeout(esconderMensagem, duracao);
+}
+
+function esconderMensagem() {
+
+    if (!mensagemFeedback) return;
+
+    mensagemFeedback.hidden = true;
+    mensagemFeedback.textContent = "";
+}
+
+function marcarCampoInvalido(campo) {
+
+    campo.classList.add("campo-invalido");
+    campo.focus();
+}
+
+function limparCamposInvalidos() {
+
+    [nomeInput, precoInput, quantidadeInput].forEach(campo => {
+        campo.classList.remove("campo-invalido");
+    });
+}
+
+// Ao digitar, remove o destaque de erro do campo
+[nomeInput, precoInput, quantidadeInput].forEach(campo => {
+    campo.addEventListener("input", function() {
+        campo.classList.remove("campo-invalido");
+    });
+});
+
+
+// =====================================================
+// FASE 5: MODAIS (SUBSTITUI O confirm)
+// =====================================================
+
+let resolverConfirmacao = null;
+let elementoFocoAnterior = null;
+
+// Retorna uma Promise: true (Confirmar) ou false (Cancelar)
+function confirmarAcao(mensagem) {
+
+    return new Promise(function(resolve) {
+
+        elementoFocoAnterior = document.activeElement;
+
+        modalMensagem.textContent = mensagem;
+        modalConfirmacao.hidden = false;
+
+        resolverConfirmacao = resolve;
+
+        modalBtnCancelar.focus();
+    });
+}
+
+function fecharModalConfirmacao(resultado) {
+
+    modalConfirmacao.hidden = true;
+
+    if (resolverConfirmacao) {
+        const resolver = resolverConfirmacao;
+        resolverConfirmacao = null;
+        resolver(resultado);
+    }
+
+    if (elementoFocoAnterior && elementoFocoAnterior.focus) {
+        elementoFocoAnterior.focus();
+    }
+}
+
+modalBtnConfirmar.addEventListener("click", function() {
+    fecharModalConfirmacao(true);
+});
+
+modalBtnCancelar.addEventListener("click", function() {
+    fecharModalConfirmacao(false);
+});
+
+// Clicar fora da caixa cancela
+modalConfirmacao.addEventListener("click", function(event) {
+    if (event.target === modalConfirmacao) {
+        fecharModalConfirmacao(false);
+    }
+});
+
+// Modal Conceito Bootstrap
+
+function abrirModalBootstrap() {
+    modalBootstrap.hidden = false;
+    modalBsFechar.focus();
+}
+
+function fecharModalBootstrap() {
+    modalBootstrap.hidden = true;
+    btnConceitoBootstrap.focus();
+}
+
+btnConceitoBootstrap.addEventListener("click", abrirModalBootstrap);
+modalBsFechar.addEventListener("click", fecharModalBootstrap);
+
+modalBootstrap.addEventListener("click", function(event) {
+    if (event.target === modalBootstrap) {
+        fecharModalBootstrap();
+    }
+});
+
+// Tecla ESC fecha os modais
+document.addEventListener("keydown", function(event) {
+
+    if (event.key !== "Escape") return;
+
+    if (!modalConfirmacao.hidden) {
+        fecharModalConfirmacao(false);
+    } else if (!modalBootstrap.hidden) {
+        fecharModalBootstrap();
+    }
+});
+
+
+// =====================================================
+// FASE 6: AUTOPREENCHIMENTO DE PRODUTOS
 // =====================================================
 
 nomeInput.addEventListener("input", function() {
@@ -138,7 +288,7 @@ nomeInput.addEventListener("input", function() {
 
 
 // =====================================================
-// FASE 5: SALVAR NO LOCALSTORAGE
+// FASE 7: SALVAR NO LOCALSTORAGE
 // =====================================================
 
 function salvarNoLocalStorage() {
@@ -157,7 +307,7 @@ function salvarNoLocalStorage() {
 
 
 // =====================================================
-// FASE 6: CARREGAR DO LOCALSTORAGE
+// FASE 8: CARREGAR DO LOCALSTORAGE
 // =====================================================
 
 function carregarDoLocalStorage() {
@@ -198,7 +348,7 @@ function carregarDoLocalStorage() {
 
 
 // =====================================================
-// FASE 7: VALIDAR E ENVIAR O FORMULÁRIO
+// FASE 9: VALIDAR E ENVIAR O FORMULÁRIO
 // =====================================================
 
 if (formProduto) {
@@ -207,72 +357,63 @@ if (formProduto) {
 
         event.preventDefault();
 
+        limparCamposInvalidos();
+
         const nome = nomeInput.value.trim();
         const preco = Number(precoInput.value);
         const quantidade = Number(quantidadeInput.value);
 
-        // VALIDAR NOME
+        // CLÁUSULAS DE GUARDA
 
         if (nome === "") {
-            alert("Digite o nome do produto.");
-            nomeInput.focus();
+            mostrarMensagem("Digite o nome do produto.", "erro");
+            marcarCampoInvalido(nomeInput);
             return;
         }
-
-        // VALIDAR PREÇO
 
         if (
             precoInput.value.trim() === "" ||
             !Number.isFinite(preco) ||
             preco <= 0
         ) {
-            alert("Digite um preço válido.");
-            precoInput.focus();
+            mostrarMensagem("Digite um preço válido (maior que zero).", "erro");
+            marcarCampoInvalido(precoInput);
             return;
         }
-
-        // VALIDAR QUANTIDADE
 
         if (
             quantidadeInput.value.trim() === "" ||
             !Number.isInteger(quantidade) ||
             quantidade <= 0
         ) {
-            alert("Digite uma quantidade inteira válida.");
-            quantidadeInput.focus();
+            mostrarMensagem("Digite uma quantidade inteira válida (maior que zero).", "erro");
+            marcarCampoInvalido(quantidadeInput);
             return;
         }
 
         try {
 
-            const novoProduto = new Produto(
-                nome,
-                preco,
-                quantidade
-            );
+            const novoProduto = new Produto(nome, preco, quantidade);
+
+            let textoSucesso;
 
             if (indiceEdicao === null) {
 
                 // CADASTRAR PRODUTO
                 listaDeProdutos.push(novoProduto);
-
-                alert("Produto cadastrado com sucesso!");
+                textoSucesso = "Produto cadastrado com sucesso!";
 
             } else {
 
                 // ATUALIZAR PRODUTO EXISTENTE
                 listaDeProdutos[indiceEdicao] = novoProduto;
-
-                alert("Produto atualizado com sucesso!");
+                textoSucesso = "Produto atualizado com sucesso!";
             }
-
-            // SALVAR E ATUALIZAR
 
             salvarNoLocalStorage();
             atualizarInterface();
 
             // VOLTAR AO MODO DE CADASTRO
-
             indiceEdicao = null;
             indiceAutopreenchido = null;
 
@@ -280,15 +421,17 @@ if (formProduto) {
 
             alterarTextoBotao(textoBotaoOriginal);
 
+            mostrarMensagem(textoSucesso, "sucesso");
+
         } catch (erro) {
-            alert(erro.message);
+            mostrarMensagem(erro.message, "erro");
         }
     });
 }
 
 
 // =====================================================
-// FASE 8: PREPARAR EDIÇÃO
+// FASE 10: PREPARAR EDIÇÃO
 // =====================================================
 
 function prepararEdicao(index) {
@@ -298,19 +441,18 @@ function prepararEdicao(index) {
         index < 0 ||
         index >= listaDeProdutos.length
     ) {
-        alert("Não foi possível encontrar esse produto.");
+        mostrarMensagem("Não foi possível encontrar esse produto.", "erro");
         return;
     }
 
     const produto = listaDeProdutos[index];
 
-    // PREENCHER OS CAMPOS
+    limparCamposInvalidos();
+    esconderMensagem();
 
     nomeInput.value = produto.nome;
     precoInput.value = produto.preco;
     quantidadeInput.value = produto.quantidade;
-
-    // ATIVAR MODO DE EDIÇÃO
 
     indiceEdicao = index;
     indiceAutopreenchido = null;
@@ -322,10 +464,10 @@ function prepararEdicao(index) {
 
 
 // =====================================================
-// FASE 9: REMOVER UM PRODUTO
+// FASE 11: REMOVER UM PRODUTO (COM MODAL)
 // =====================================================
 
-function removerProduto(index) {
+async function removerProduto(index) {
 
     if (
         !Number.isInteger(index) ||
@@ -335,11 +477,14 @@ function removerProduto(index) {
         return;
     }
 
-    const confirmar = confirm(
-        "Deseja realmente remover este produto?"
+    const nomeProduto = listaDeProdutos[index].nome;
+
+    // Aguarda a resposta do usuário no modal
+    const confirmou = await confirmarAcao(
+        `Deseja realmente remover "${nomeProduto}"? Essa ação não pode ser desfeita.`
     );
 
-    if (!confirmar) return;
+    if (!confirmou) return;
 
     listaDeProdutos.splice(index, 1);
 
@@ -355,7 +500,6 @@ function removerProduto(index) {
     } else if (indiceEdicao !== null && index < indiceEdicao) {
 
         indiceEdicao--;
-
     }
 
     // Ajustar índice do autopreenchimento
@@ -370,27 +514,33 @@ function removerProduto(index) {
     ) {
 
         indiceAutopreenchido--;
-
     }
 
     salvarNoLocalStorage();
     atualizarInterface();
+
+    mostrarMensagem("Produto removido com sucesso!", "sucesso");
 }
 
 
 // =====================================================
-// FASE 10: LIMPAR TODOS OS PRODUTOS
+// FASE 12: LIMPAR TODOS OS PRODUTOS (COM MODAL)
 // =====================================================
 
 if (btnLimparTudo) {
 
-    btnLimparTudo.addEventListener("click", function() {
+    btnLimparTudo.addEventListener("click", async function() {
 
-        const confirmar = confirm(
-            "Deseja realmente excluir todos os produtos?"
+        if (listaDeProdutos.length === 0) {
+            mostrarMensagem("Não há produtos para excluir.", "erro");
+            return;
+        }
+
+        const confirmou = await confirmarAcao(
+            "Deseja realmente excluir TODOS os produtos? Essa ação não pode ser desfeita."
         );
 
-        if (!confirmar) return;
+        if (!confirmou) return;
 
         listaDeProdutos.length = 0;
 
@@ -400,6 +550,7 @@ if (btnLimparTudo) {
         localStorage.removeItem(CHAVE_STORAGE);
 
         formProduto.reset();
+        limparCamposInvalidos();
 
         if (campoBusca) {
             campoBusca.value = "";
@@ -408,12 +559,14 @@ if (btnLimparTudo) {
         alterarTextoBotao(textoBotaoOriginal);
 
         atualizarInterface();
+
+        mostrarMensagem("Todos os produtos foram excluídos.", "sucesso");
     });
 }
 
 
 // =====================================================
-// FASE 11: FILTRAR PRODUTOS COM FILTER()
+// FASE 13: FILTRAR PRODUTOS COM FILTER()
 // =====================================================
 
 function obterProdutosFiltrados() {
@@ -434,23 +587,19 @@ function obterProdutosFiltrados() {
             return item.produto.nome
                 .toLowerCase()
                 .includes(termoBusca);
-
         });
 }
 
 
 // =====================================================
-// FASE 12: CALCULAR TOTAL COM REDUCE()
+// FASE 14: CALCULAR TOTAL COM REDUCE()
 // =====================================================
 
 function atualizarTotalEstoque(produtosVisiveis) {
 
     const valorTotal = produtosVisiveis.reduce(
         (acumulador, item) => {
-
-            return acumulador +
-                item.produto.calcularSubtotal();
-
+            return acumulador + item.produto.calcularSubtotal();
         },
         0
     );
@@ -466,7 +615,7 @@ function atualizarTotalEstoque(produtosVisiveis) {
 
 
 // =====================================================
-// FASE 13: RENDERIZAR A TABELA
+// FASE 15: RENDERIZAR A TABELA
 // =====================================================
 
 function renderizarTabela(produtosVisiveis) {
@@ -475,14 +624,7 @@ function renderizarTabela(produtosVisiveis) {
 
     // VERIFICAR SE EXISTEM PRODUTOS
 
-    if (produtosVisiveis.length === 0) {
-
-        mensagemVazia.hidden = false;
-
-    } else {
-
-        mensagemVazia.hidden = true;
-    }
+    mensagemVazia.hidden = produtosVisiveis.length !== 0;
 
     produtosVisiveis.forEach(item => {
 
@@ -502,10 +644,7 @@ function renderizarTabela(produtosVisiveis) {
 
         celulaPreco.textContent = produto.preco.toLocaleString(
             "pt-BR",
-            {
-                style: "currency",
-                currency: "BRL"
-            }
+            { style: "currency", currency: "BRL" }
         );
 
         // QUANTIDADE
@@ -520,17 +659,12 @@ function renderizarTabela(produtosVisiveis) {
         celulaSubtotal.textContent =
             produto.calcularSubtotal().toLocaleString(
                 "pt-BR",
-                {
-                    style: "currency",
-                    currency: "BRL"
-                }
+                { style: "currency", currency: "BRL" }
             );
 
         // AÇÕES
 
         const celulaAcoes = document.createElement("td");
-
-        // BOTÃO EDITAR
 
         const btnEditar = document.createElement("button");
 
@@ -542,8 +676,6 @@ function renderizarTabela(produtosVisiveis) {
             prepararEdicao(index);
         });
 
-        // BOTÃO REMOVER
-
         const btnRemover = document.createElement("button");
 
         btnRemover.type = "button";
@@ -554,11 +686,7 @@ function renderizarTabela(produtosVisiveis) {
             removerProduto(index);
         });
 
-        // ADICIONAR BOTÕES
-
         celulaAcoes.append(btnEditar, btnRemover);
-
-        // MONTAR LINHA
 
         linha.append(
             celulaNome,
@@ -574,41 +702,33 @@ function renderizarTabela(produtosVisiveis) {
 
 
 // =====================================================
-// FASE 14: ATUALIZAR INTERFACE
+// FASE 16: ATUALIZAR INTERFACE
 // =====================================================
 
 function atualizarInterface() {
 
-    // Obter produtos correspondentes à pesquisa
-
     const produtosVisiveis = obterProdutosFiltrados();
 
-    // Atualizar tabela
-
     renderizarTabela(produtosVisiveis);
-
-    // Atualizar total do estoque
 
     atualizarTotalEstoque(produtosVisiveis);
 }
 
 
 // =====================================================
-// FASE 15: PESQUISA DINÂMICA COM EVENTO INPUT
+// FASE 17: PESQUISA DINÂMICA COM EVENTO INPUT
 // =====================================================
 
 if (campoBusca) {
 
     campoBusca.addEventListener("input", function() {
-
         atualizarInterface();
-
     });
 }
 
 
 // =====================================================
-// FASE 16: INICIAR O SISTEMA
+// FASE 18: INICIAR O SISTEMA
 // =====================================================
 
 carregarDoLocalStorage();
